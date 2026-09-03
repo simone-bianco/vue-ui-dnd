@@ -1,0 +1,52 @@
+{
+  "name": "@simone-bianco/vue-ui-dnd",
+  "version": "0.1.0",
+  "description": "Framework-neutral Vue 3 drag-and-drop primitives built on Pragmatic Drag and Drop.",
+  "type": "module",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "main": "./dist/vue-ui-dnd.cjs",
+  "module": "./dist/vue-ui-dnd.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/vue-ui-dnd.js",
+      "require": "./dist/vue-ui-dnd.cjs"
+    },
+    "./style.css": "./dist/vue-ui-dnd.css"
+  },
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "scripts": {
+    "build": "npm run test:types && npm run build:es && npm run test:package-types && npm run test:package-runtime && npm run build:cjs",
+    "build:es": "vite build --mode es",
+    "build:cjs": "vite build --mode cjs",
+    "test": "vitest run",
+    "test:types": "vue-tsc --noEmit",
+    "test:package-types": "tsc --noEmit --strict --skipLibCheck false --module ESNext --moduleResolution Bundler --target ES2020 tests/package-consumer.ts",
+    "test:package-runtime": "node tests/package-runtime.mjs"
+  },
+  "peerDependencies": {
+    "vue": "^3.4.0"
+  },
+  "dependencies": {
+    "@atlaskit/pragmatic-drag-and-drop": "3.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.13",
+    "@vitejs/plugin-vue": "6.0.8",
+    "@vue/server-renderer": "3.5.41",
+    "@vue/test-utils": "2.4.6",
+    "happy-dom": "^20.11.1",
+    "typescript": "^5.9.3",
+    "vite": "8.2.1",
+    "vite-plugin-dts": "5.0.3",
+    "vitest": "4.1.10",
+    "vue": "3.5.41",
+    "vue-tsc": "3.3.9"
+  }
+}

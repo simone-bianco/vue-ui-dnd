@@ -1,0 +1,83 @@
+.vue-ui-sortable-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.vue-ui-sortable-list[data-orientation="horizontal"] {
+  flex-direction: row;
+}
+
+.vue-ui-sortable-list__item {
+  position: relative;
+  display: flex;
+  min-width: 0;
+}
+
+.vue-ui-sortable-list__handle {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: grab;
+  touch-action: none;
+}
+
+.vue-ui-sortable-list__handle:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.vue-ui-sortable-list__handle:active {
+  cursor: grabbing;
+}
+
+.vue-ui-sortable-list__content {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.vue-ui-sortable-list__item--dragging {
+  opacity: 0.55;
+}
+
+.vue-ui-sortable-list__item[data-drop-position="before"]::before,
+.vue-ui-sortable-list__item[data-drop-position="after"]::after {
+  position: absolute;
+  z-index: 1;
+  content: "";
+  pointer-events: none;
+  background: currentColor;
+}
+
+.vue-ui-sortable-list[data-orientation="vertical"] > .vue-ui-sortable-list__item[data-drop-position="before"]::before,
+.vue-ui-sortable-list[data-orientation="vertical"] > .vue-ui-sortable-list__item[data-drop-position="after"]::after {
+  right: 0;
+  left: 0;
+  height: 2px;
+}
+
+.vue-ui-sortable-list[data-orientation="vertical"] > .vue-ui-sortable-list__item[data-drop-position="before"]::before {
+  top: 0;
+}
+
+.vue-ui-sortable-list[data-orientation="vertical"] > .vue-ui-sortable-list__item[data-drop-position="after"]::after {
+  bottom: 0;
+}
+
+.vue-ui-sortable-list[data-orientation="horizontal"] > .vue-ui-sortable-list__item[data-drop-position="before"]::before,
+.vue-ui-sortable-list[data-orientation="horizontal"] > .vue-ui-sortable-list__item[data-drop-position="after"]::after {
+  top: 0;
+  bottom: 0;
+  width: 2px;
+}
+
+.vue-ui-sortable-list[data-orientation="horizontal"] > .vue-ui-sortable-list__item[data-drop-position="before"]::before {
+  left: 0;
+}
+
+.vue-ui-sortable-list[data-orientation="horizontal"] > .vue-ui-sortable-list__item[data-drop-position="after"]::after {
+  right: 0;
+}
