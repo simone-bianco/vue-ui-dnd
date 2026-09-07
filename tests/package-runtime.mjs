@@ -1,6 +1,19 @@
 import { createSSRApp, h, ref } from "vue";
 import { renderToString } from "@vue/server-renderer";
-import { SortableList } from "@simone-bianco/vue-ui-dnd";
+import {
+  SortableList,
+  useDragSource,
+  useDropTarget,
+} from "@simone-bianco/vue-ui-dnd";
+
+if (
+  typeof useDragSource !== "function" ||
+  typeof useDropTarget !== "function"
+) {
+  throw new Error(
+    "External drag/drop composables are missing from the ESM package surface.",
+  );
+}
 
 const items = ref([
   { id: 1, title: "Tools" },
@@ -29,7 +42,9 @@ const app = createSSRApp({
 
 const html = await renderToString(app);
 if (!html.includes("Tools") || !html.includes("Packages")) {
-  throw new Error("SortableList SSR smoke render did not include expected item content.");
+  throw new Error(
+    "SortableList SSR smoke render did not include expected item content.",
+  );
 }
 
-console.log("ESM import + SSR smoke passed");
+console.log("ESM imports + SSR smoke passed");

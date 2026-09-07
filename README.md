@@ -24,14 +24,17 @@ const items = ref([
     v-model="items"
     item-key="id"
     :get-item-label="(item) => item.title"
-    @reorder="event => console.log(event.fromIndex, event.toIndex)"
+    @reorder="(event) => console.log(event.fromIndex, event.toIndex)"
   >
     <template #handle>
       <span aria-hidden="true">Drag</span>
     </template>
 
     <template #item="{ item, dragging, dropPosition }">
-      <div :data-dragging="dragging || undefined" :data-drop-position="dropPosition || undefined">
+      <div
+        :data-dragging="dragging || undefined"
+        :data-drop-position="dropPosition || undefined"
+      >
         {{ item.title }}
       </div>
     </template>
@@ -58,3 +61,28 @@ const items = ref([
 The built-in handle also supports keyboard reorder: Arrow Up/Down for vertical lists, Arrow Left/Right for horizontal lists, plus Home/End.
 
 Persistence is intentionally outside this package.
+
+## Element-local external drag/drop
+
+For cross-component drag/drop, use `useDragSource` and `useDropTarget`. They keep Pragmatic Drag and Drop private to this package and register only the supplied elements; no consumer-level global monitor is required.
+
+```ts
+const source = ref<HTMLElement | null>(null);
+const target = ref<HTMLElement | null>(null);
+
+useDragSource({
+  element: source,
+  type: "flow-node",
+  data: { kind: "wait" },
+});
+
+useDropTarget<{ kind: string }>({
+  element: target,
+  accept: "flow-node",
+  onDrop: ({ data, clientX, clientY }) => {
+    console.log(data.kind, clientX, clientY);
+  },
+});
+```
+
+Both composables clean up when their element ref changes, when disabled, and when the owning Vue scope unmounts. `useDropTarget` normalizes drops to `{ type, data, clientX, clientY }`; application coordinate conversion remains the consumer's responsibility.

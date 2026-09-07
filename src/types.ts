@@ -1,8 +1,11 @@
+import type { MaybeRefOrGetter } from "vue";
+
 export type SortableKey = string | number;
 export type SortableOrientation = "vertical" | "horizontal";
 export type SortableDropPosition = "before" | "after" | null;
 
-export type SortableItemKey<T> = keyof T | ((item: T, index: number) => SortableKey);
+export type SortableItemKey<T> =
+  keyof T | ((item: T, index: number) => SortableKey);
 
 export interface SortableListProps<TItem> {
   itemKey: SortableItemKey<TItem>;
@@ -47,4 +50,32 @@ export interface SortableItemSlotProps<T> {
 
 export interface SortableHandleSlotProps<T> extends SortableItemSlotProps<T> {
   ariaLabel: string;
+}
+
+export interface ExternalDragEnvelope<T> {
+  [key: string]: unknown;
+  kind: "vue-ui-dnd-external";
+  type: string;
+  payload: T;
+}
+
+export interface DragSourceOptions<T> {
+  element: MaybeRefOrGetter<HTMLElement | null>;
+  type: string;
+  data: MaybeRefOrGetter<T>;
+  disabled?: MaybeRefOrGetter<boolean>;
+}
+
+export interface DropEvent<T> {
+  type: string;
+  data: T;
+  clientX: number;
+  clientY: number;
+}
+
+export interface DropTargetOptions<T> {
+  element: MaybeRefOrGetter<HTMLElement | null>;
+  accept: string | readonly string[];
+  disabled?: MaybeRefOrGetter<boolean>;
+  onDrop: (event: DropEvent<T>) => void;
 }

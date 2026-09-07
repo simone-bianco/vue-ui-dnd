@@ -1,5 +1,15 @@
-import { SortableList } from "@simone-bianco/vue-ui-dnd";
-import type { SortableListProps, SortableReorderEvent } from "@simone-bianco/vue-ui-dnd";
+import {
+  SortableList,
+  useDragSource,
+  useDropTarget,
+} from "@simone-bianco/vue-ui-dnd";
+import type {
+  DragSourceOptions,
+  DropEvent,
+  DropTargetOptions,
+  SortableListProps,
+  SortableReorderEvent,
+} from "@simone-bianco/vue-ui-dnd";
 
 interface Instruction {
   id: number;
@@ -21,6 +31,22 @@ const event: SortableReorderEvent<Instruction> = {
   method: "keyboard",
 };
 
+const element = null as HTMLElement | null;
+const dragOptions: DragSourceOptions<{ kind: string }> = {
+  element,
+  type: "example",
+  data: { kind: "example" },
+};
+const dropOptions: DropTargetOptions<{ kind: string }> = {
+  element,
+  accept: "example",
+  onDrop: (drop: DropEvent<{ kind: string }>) => void drop.data.kind,
+};
+
 void SortableList;
+void useDragSource;
+void useDropTarget;
 void props;
 void event;
+void dragOptions;
+void dropOptions;
