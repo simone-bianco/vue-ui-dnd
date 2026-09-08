@@ -49,11 +49,14 @@ const initialItems = (): Item[] => [
   { id: 3, title: "Behaviour" },
 ];
 
-async function mountList(options: {
-  useHandle?: boolean;
-  disabled?: boolean;
-  canDrag?: (item: Item, index: number) => boolean;
-} = {}) {
+async function mountList(
+  options: {
+    useHandle?: boolean;
+    disabled?: boolean;
+    animated?: boolean;
+    canDrag?: (item: Item, index: number) => boolean;
+  } = {},
+) {
   let model = initialItems();
   const wrapper = mount(SortableList<Item>, {
     props: {
@@ -62,6 +65,7 @@ async function mountList(options: {
       getItemLabel: (item: Item) => item.title,
       useHandle: options.useHandle,
       disabled: options.disabled,
+      animated: options.animated,
       canDrag: options.canDrag,
       "onUpdate:modelValue": (value: Item[]) => {
         model = value;
@@ -71,6 +75,7 @@ async function mountList(options: {
     slots: {
       item: ({ item }: { item: Item }) => item.title,
     },
+    global: { stubs: { "transition-group": false } },
   });
 
   await nextTick();
@@ -105,7 +110,8 @@ describe("SortableList", () => {
     const sourceData = dragData(source);
     const selfData = targetData(target);
 
-    const targetElement = wrapper.get('[data-sortable-key="number:2"]').element as HTMLElement;
+    const targetElement = wrapper.get('[data-sortable-key="number:2"]')
+      .element as HTMLElement;
     vi.spyOn(targetElement, "getBoundingClientRect").mockReturnValue({
       x: 0,
       y: 0,
@@ -153,7 +159,8 @@ describe("SortableList", () => {
     const sourceData = dragData(source);
     const selfData = targetData(target);
 
-    const targetElement = wrapper.get('[data-sortable-key="number:2"]').element as HTMLElement;
+    const targetElement = wrapper.get('[data-sortable-key="number:2"]')
+      .element as HTMLElement;
     vi.spyOn(targetElement, "getBoundingClientRect").mockReturnValue({
       x: 0,
       y: 0,
@@ -172,7 +179,11 @@ describe("SortableList", () => {
       location: { current: { input: { clientX: 10, clientY: 10 } } },
     });
     await nextTick();
-    expect(wrapper.get('[data-sortable-key="number:2"]').attributes("data-drop-position")).toBe("before");
+    expect(
+      wrapper
+        .get('[data-sortable-key="number:2"]')
+        .attributes("data-drop-position"),
+    ).toBe("before");
 
     mocks.monitors[0].onDrop?.({
       source: { data: sourceData },
@@ -182,7 +193,11 @@ describe("SortableList", () => {
 
     expect(getModel().map((item) => item.id)).toEqual([1, 2, 3]);
     expect(wrapper.emitted("reorder")).toBeUndefined();
-    expect(wrapper.get('[data-sortable-key="number:2"]').attributes("data-drop-position")).toBeUndefined();
+    expect(
+      wrapper
+        .get('[data-sortable-key="number:2"]')
+        .attributes("data-drop-position"),
+    ).toBeUndefined();
   });
 
   it("supports keyboard reorder from the handle", async () => {
@@ -193,7 +208,11 @@ describe("SortableList", () => {
     await nextTick();
 
     expect(getModel().map((item) => item.id)).toEqual([2, 1, 3]);
-    expect(wrapper.emitted("reorder")?.[0]?.[0]).toMatchObject({ method: "keyboard", fromIndex: 0, toIndex: 1 });
+    expect(wrapper.emitted("reorder")?.[0]?.[0]).toMatchObject({
+      method: "keyboard",
+      fromIndex: 0,
+      toIndex: 1,
+    });
   });
 
   it("preserves keyboard reorder when whole-item dragging is enabled", async () => {
@@ -206,22 +225,44 @@ describe("SortableList", () => {
     await nextTick();
 
     expect(getModel().map((item) => item.id)).toEqual([2, 3, 1]);
-    expect(wrapper.emitted("reorder")?.[0]?.[0]).toMatchObject({ method: "keyboard", fromIndex: 0, toIndex: 2 });
+    expect(wrapper.emitted("reorder")?.[0]?.[0]).toMatchObject({
+      method: "keyboard",
+      fromIndex: 0,
+      toIndex: 2,
+    });
   });
 
   it("honors disabled and per-item canDrag guards", async () => {
     const disabled = await mountList({ disabled: true });
-    const disabledHandle = disabled.wrapper.find("button.vue-ui-sortable-list__handle");
+    const disabledHandle = disabled.wrapper.find(
+      "button.vue-ui-sortable-list__handle",
+    );
     expect(disabledHandle.attributes("disabled")).toBeDefined();
     await disabledHandle.trigger("keydown", { key: "ArrowDown" });
     expect(disabled.getModel().map((item) => item.id)).toEqual([1, 2, 3]);
     disabled.wrapper.unmount();
 
     const guarded = await mountList({ canDrag: (item) => item.id !== 1 });
-    const guardedHandle = guarded.wrapper.find("button.vue-ui-sortable-list__handle");
+    const guardedHandle = guarded.wrapper.find(
+      "button.vue-ui-sortable-list__handle",
+    );
     expect(guardedHandle.attributes("disabled")).toBeDefined();
     await guardedHandle.trigger("keydown", { key: "ArrowDown" });
     expect(guarded.getModel().map((item) => item.id)).toEqual([1, 2, 3]);
+  });
+
+  it("makes only the handle native-draggable so content remains mouse-selectable", async () => {
+    const { wrapper } = await mountList();
+    const row = wrapper.get('[data-sortable-key="number:1"]').element;
+    const handle = wrapper.get('[aria-label="Reorder Tools"]').element;
+    expect(mocks.draggables[0].element).toBe(handle);
+    expect(mocks.dropTargets[0].element).toBe(row);
+    const nativeSetDragImage = vi.fn();
+    mocks.draggables[0].onGenerateDragPreview({
+      nativeSetDragImage,
+      location: { current: { input: { clientX: 10, clientY: 12 } } },
+    });
+    expect(nativeSetDragImage).toHaveBeenCalledWith(row, 10, 12);
   });
 
   it("cleans up draggable, target, and monitor registrations on unmount", async () => {
@@ -231,6 +272,33 @@ describe("SortableList", () => {
     wrapper.unmount();
 
     expect(cleanups).not.toHaveLength(0);
-    expect(cleanups.every((cleanup) => cleanup.mock.calls.length > 0)).toBe(true);
+    expect(cleanups.every((cleanup) => cleanup.mock.calls.length > 0)).toBe(
+      true,
+    );
   });
+
+  it.each([true, false])(
+    "preserves item elements and registrations with animated=%s",
+    async (animated) => {
+      const { wrapper, getModel } = await mountList({ animated });
+      const original = wrapper.get('[data-sortable-key="number:1"]').element;
+      const handle = wrapper.get('[aria-label="Reorder Tools"]');
+      const registrationCount = mocks.draggables.length;
+
+      await handle.trigger("keydown", { key: "End" });
+      await nextTick();
+      await nextTick();
+
+      expect(getModel().map((item) => item.id)).toEqual([2, 3, 1]);
+      expect(wrapper.get('[data-sortable-key="number:1"]').element).toBe(
+        original,
+      );
+      expect(original.parentElement).toBe(wrapper.element);
+      expect(wrapper.get('[aria-label="Reorder Tools"]').element).toBe(
+        handle.element,
+      );
+      expect(mocks.draggables).toHaveLength(registrationCount);
+      wrapper.unmount();
+    },
+  );
 });

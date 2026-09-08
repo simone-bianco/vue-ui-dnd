@@ -50,6 +50,7 @@ const items = ref([
 - `item-key`: required stable string/number property or resolver function.
 - `orientation`: `vertical` (default) or `horizontal`.
 - `disabled`: disables all dragging.
+- `animated`: animates item position changes after pointer drops, keyboard moves and model reorders (default `true`). Uses Vue `TransitionGroup` without extra DOM wrappers or animation dependencies. The package stylesheet disables movement for `prefers-reduced-motion: reduce`; set `:animated="false"` to opt out per list. Hovering during a drag still shows the insertion marker; it does not mutate the model.
 - `use-handle`: use the built-in accessible handle (default) or make the whole item draggable.
 - `can-drag`: optional per-item guard.
 - `get-item-label`: supplies the accessible handle label.
@@ -61,6 +62,8 @@ const items = ref([
 The built-in handle also supports keyboard reorder: Arrow Up/Down for vertical lists, Arrow Left/Right for horizontal lists, plus Home/End.
 
 Persistence is intentionally outside this package.
+
+With `useHandle` (default), only the handle is registered as the native draggable; the row remains the drop target and drag preview. Text and controls in the content area remain normally selectable/interactive without holding Alt. With `useHandle=false`, the whole row is intentionally draggable.
 
 ## Element-local external drag/drop
 

@@ -19,6 +19,7 @@ interface Instruction {
 const props: SortableListProps<Instruction> = {
   itemKey: "id",
   orientation: "vertical",
+  animated: true,
   getItemLabel: (item) => item.title,
 };
 

@@ -13,6 +13,16 @@
   min-width: 0;
 }
 
+.vue-ui-sortable-list__move {
+  transition: transform 240ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vue-ui-sortable-list__move {
+    transition: none;
+  }
+}
+
 .vue-ui-sortable-list__handle {
   display: inline-flex;
   flex: 0 0 auto;
@@ -23,6 +33,7 @@
   color: inherit;
   cursor: grab;
   touch-action: none;
+  user-select: none;
 }
 
 .vue-ui-sortable-list__handle:disabled {
@@ -52,32 +63,40 @@
   background: currentColor;
 }
 
-.vue-ui-sortable-list[data-orientation="vertical"] > .vue-ui-sortable-list__item[data-drop-position="before"]::before,
-.vue-ui-sortable-list[data-orientation="vertical"] > .vue-ui-sortable-list__item[data-drop-position="after"]::after {
+.vue-ui-sortable-list[data-orientation="vertical"]
+  > .vue-ui-sortable-list__item[data-drop-position="before"]::before,
+.vue-ui-sortable-list[data-orientation="vertical"]
+  > .vue-ui-sortable-list__item[data-drop-position="after"]::after {
   right: 0;
   left: 0;
   height: 2px;
 }
 
-.vue-ui-sortable-list[data-orientation="vertical"] > .vue-ui-sortable-list__item[data-drop-position="before"]::before {
+.vue-ui-sortable-list[data-orientation="vertical"]
+  > .vue-ui-sortable-list__item[data-drop-position="before"]::before {
   top: 0;
 }
 
-.vue-ui-sortable-list[data-orientation="vertical"] > .vue-ui-sortable-list__item[data-drop-position="after"]::after {
+.vue-ui-sortable-list[data-orientation="vertical"]
+  > .vue-ui-sortable-list__item[data-drop-position="after"]::after {
   bottom: 0;
 }
 
-.vue-ui-sortable-list[data-orientation="horizontal"] > .vue-ui-sortable-list__item[data-drop-position="before"]::before,
-.vue-ui-sortable-list[data-orientation="horizontal"] > .vue-ui-sortable-list__item[data-drop-position="after"]::after {
+.vue-ui-sortable-list[data-orientation="horizontal"]
+  > .vue-ui-sortable-list__item[data-drop-position="before"]::before,
+.vue-ui-sortable-list[data-orientation="horizontal"]
+  > .vue-ui-sortable-list__item[data-drop-position="after"]::after {
   top: 0;
   bottom: 0;
   width: 2px;
 }
 
-.vue-ui-sortable-list[data-orientation="horizontal"] > .vue-ui-sortable-list__item[data-drop-position="before"]::before {
+.vue-ui-sortable-list[data-orientation="horizontal"]
+  > .vue-ui-sortable-list__item[data-drop-position="before"]::before {
   left: 0;
 }
 
-.vue-ui-sortable-list[data-orientation="horizontal"] > .vue-ui-sortable-list__item[data-drop-position="after"]::after {
+.vue-ui-sortable-list[data-orientation="horizontal"]
+  > .vue-ui-sortable-list__item[data-drop-position="after"]::after {
   right: 0;
 }

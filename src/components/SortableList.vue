@@ -5,7 +5,16 @@ import {
   monitorForElements,
 } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
-import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  reactive,
+  ref,
+  TransitionGroup,
+  watch,
+} from "vue";
 import type {
   SortableDropPosition,
   SortableKey,
@@ -28,6 +37,7 @@ interface DragData {
 const props = withDefaults(defineProps<SortableListProps<T>>(), {
   orientation: "vertical",
   disabled: false,
+  animated: true,
   useHandle: true,
   tag: "div",
   itemTag: "div",
@@ -61,7 +71,9 @@ function resolveKey(item: T, index: number): SortableKey {
 
   const value = item[props.itemKey];
   if (typeof value !== "string" && typeof value !== "number") {
-    throw new TypeError("SortableList itemKey must resolve to a string or number.");
+    throw new TypeError(
+      "SortableList itemKey must resolve to a string or number.",
+    );
   }
 
   return value;
@@ -69,7 +81,9 @@ function resolveKey(item: T, index: number): SortableKey {
 
 function resolveIndex(key: SortableKey): number {
   const serialized = serializeKey(key);
-  return items.value.findIndex((item, index) => serializeKey(resolveKey(item, index)) === serialized);
+  return items.value.findIndex(
+    (item, index) => serializeKey(resolveKey(item, index)) === serialized,
+  );
 }
 
 function itemCanDrag(item: T, index: number): boolean {
@@ -84,11 +98,17 @@ function handleAriaLabel(item: T, index: number): string {
   return `Reorder ${itemLabel(item, index)}`;
 }
 
-function isDragData(data: Record<string, unknown>): data is Record<string, unknown> & DragData {
+function isDragData(
+  data: Record<string, unknown>,
+): data is Record<string, unknown> & DragData {
   return data.type === "vue-ui-dnd-sortable-item" && data.listId === listId;
 }
 
-function computeDropPosition(element: HTMLElement, clientX: number, clientY: number): Exclude<SortableDropPosition, null> {
+function computeDropPosition(
+  element: HTMLElement,
+  clientX: number,
+  clientY: number,
+): Exclude<SortableDropPosition, null> {
   const rect = element.getBoundingClientRect();
   if (props.orientation === "horizontal") {
     return clientX < rect.left + rect.width / 2 ? "before" : "after";
@@ -101,8 +121,17 @@ function clearDropState(): void {
   dropPositions.clear();
 }
 
-function reorder(fromIndex: number, rawToIndex: number, method: "pointer" | "keyboard"): void {
-  if (fromIndex < 0 || fromIndex >= items.value.length || rawToIndex < 0 || rawToIndex >= items.value.length) {
+function reorder(
+  fromIndex: number,
+  rawToIndex: number,
+  method: "pointer" | "keyboard",
+): void {
+  if (
+    fromIndex < 0 ||
+    fromIndex >= items.value.length ||
+    rawToIndex < 0 ||
+    rawToIndex >= items.value.length
+  ) {
     return;
   }
 
@@ -129,7 +158,11 @@ function reorder(fromIndex: number, rawToIndex: number, method: "pointer" | "key
   });
 }
 
-function reorderFromDrop(sourceKey: SortableKey, targetKey: SortableKey, position: Exclude<SortableDropPosition, null>): void {
+function reorderFromDrop(
+  sourceKey: SortableKey,
+  targetKey: SortableKey,
+  position: Exclude<SortableDropPosition, null>,
+): void {
   const fromIndex = resolveIndex(sourceKey);
   const targetIndex = resolveIndex(targetKey);
   if (fromIndex < 0 || targetIndex < 0 || fromIndex === targetIndex) {
@@ -141,7 +174,11 @@ function reorderFromDrop(sourceKey: SortableKey, targetKey: SortableKey, positio
     insertionIndex -= 1;
   }
 
-  reorder(fromIndex, Math.max(0, Math.min(insertionIndex, items.value.length - 1)), "pointer");
+  reorder(
+    fromIndex,
+    Math.max(0, Math.min(insertionIndex, items.value.length - 1)),
+    "pointer",
+  );
 }
 
 function registerItem(serializedKey: string): void {
@@ -153,26 +190,49 @@ function registerItem(serializedKey: string): void {
   registration.cleanup?.();
 
   const element = registration.element;
-  const handle = props.useHandle ? registration.handle ?? undefined : undefined;
+  const handle = props.useHandle
+    ? (registration.handle ?? undefined)
+    : undefined;
+  if (props.useHandle && !handle) return;
 
   registration.cleanup = combine(
     draggable({
-      element,
-      dragHandle: handle,
+      // Native draggable ancestors prevent normal mouse text selection.
+      // In handle mode only the handle is draggable; the row remains the drop target.
+      element: handle ?? element,
+      onGenerateDragPreview: ({ nativeSetDragImage, location }) => {
+        if (!handle) return;
+        const rect = element.getBoundingClientRect();
+        nativeSetDragImage?.(
+          element,
+          location.current.input.clientX - rect.left,
+          location.current.input.clientY - rect.top,
+        );
+      },
       canDrag: () => {
         const currentIndex = items.value.findIndex(
-          (item, index) => serializeKey(resolveKey(item, index)) === serializedKey,
+          (item, index) =>
+            serializeKey(resolveKey(item, index)) === serializedKey,
         );
         const currentItem = items.value[currentIndex];
-        return currentIndex >= 0 && currentItem !== undefined && itemCanDrag(currentItem, currentIndex);
+        return (
+          currentIndex >= 0 &&
+          currentItem !== undefined &&
+          itemCanDrag(currentItem, currentIndex)
+        );
       },
       getInitialData: () => {
         const index = items.value.findIndex(
-          (item, itemIndex) => serializeKey(resolveKey(item, itemIndex)) === serializedKey,
+          (item, itemIndex) =>
+            serializeKey(resolveKey(item, itemIndex)) === serializedKey,
         );
         const item = items.value[index];
         if (index < 0 || item === undefined) {
-          return { type: "vue-ui-dnd-sortable-item", listId, key: serializedKey };
+          return {
+            type: "vue-ui-dnd-sortable-item",
+            listId,
+            key: serializedKey,
+          };
         }
 
         return {
@@ -186,14 +246,14 @@ function registerItem(serializedKey: string): void {
           draggingKey.value = serializeKey(source.data.key);
         }
       },
-      
     }),
     dropTargetForElements({
       element,
       canDrop: ({ source }) => isDragData(source.data),
       getData: () => {
         const index = items.value.findIndex(
-          (item, itemIndex) => serializeKey(resolveKey(item, itemIndex)) === serializedKey,
+          (item, itemIndex) =>
+            serializeKey(resolveKey(item, itemIndex)) === serializedKey,
         );
         const item = items.value[index];
         return {
@@ -214,7 +274,11 @@ function registerItem(serializedKey: string): void {
 
         dropPositions.set(
           serializedKey,
-          computeDropPosition(element, location.current.input.clientX, location.current.input.clientY),
+          computeDropPosition(
+            element,
+            location.current.input.clientX,
+            location.current.input.clientY,
+          ),
         );
       },
       onDragLeave: () => {
@@ -227,7 +291,11 @@ function registerItem(serializedKey: string): void {
 function setItemElement(key: SortableKey, value: unknown): void {
   const serializedKey = serializeKey(key);
   const element = value instanceof HTMLElement ? value : null;
-  const existing = registrations.get(serializedKey) ?? { element: null, handle: null, cleanup: null };
+  const existing = registrations.get(serializedKey) ?? {
+    element: null,
+    handle: null,
+    cleanup: null,
+  };
 
   if (existing.element === element) {
     return;
@@ -246,7 +314,11 @@ function setItemElement(key: SortableKey, value: unknown): void {
 function setHandleElement(key: SortableKey, value: unknown): void {
   const serializedKey = serializeKey(key);
   const element = value instanceof HTMLElement ? value : null;
-  const existing = registrations.get(serializedKey) ?? { element: null, handle: null, cleanup: null };
+  const existing = registrations.get(serializedKey) ?? {
+    element: null,
+    handle: null,
+    cleanup: null,
+  };
 
   if (existing.handle === element) {
     return;
@@ -261,7 +333,9 @@ function setHandleElement(key: SortableKey, value: unknown): void {
 }
 
 function cleanupMissingRegistrations(): void {
-  const activeKeys = new Set(items.value.map((item, index) => serializeKey(resolveKey(item, index))));
+  const activeKeys = new Set(
+    items.value.map((item, index) => serializeKey(resolveKey(item, index))),
+  );
   for (const [key, registration] of registrations) {
     if (!activeKeys.has(key)) {
       registration.cleanup?.();
@@ -282,8 +356,10 @@ function moveByKeyboard(item: T, index: number, event: KeyboardEvent): void {
     return;
   }
 
-  const previousKey = props.orientation === "horizontal" ? "ArrowLeft" : "ArrowUp";
-  const nextKey = props.orientation === "horizontal" ? "ArrowRight" : "ArrowDown";
+  const previousKey =
+    props.orientation === "horizontal" ? "ArrowLeft" : "ArrowUp";
+  const nextKey =
+    props.orientation === "horizontal" ? "ArrowRight" : "ArrowDown";
 
   let targetIndex: number | null = null;
   if (event.key === previousKey) {
@@ -296,7 +372,12 @@ function moveByKeyboard(item: T, index: number, event: KeyboardEvent): void {
     targetIndex = items.value.length - 1;
   }
 
-  if (targetIndex === null || targetIndex < 0 || targetIndex >= items.value.length || targetIndex === index) {
+  if (
+    targetIndex === null ||
+    targetIndex < 0 ||
+    targetIndex >= items.value.length ||
+    targetIndex === index
+  ) {
     return;
   }
 
@@ -305,7 +386,13 @@ function moveByKeyboard(item: T, index: number, event: KeyboardEvent): void {
 }
 
 watch(
-  () => [props.disabled, props.useHandle, props.orientation, props.canDrag] as const,
+  () =>
+    [
+      props.disabled,
+      props.useHandle,
+      props.orientation,
+      props.canDrag,
+    ] as const,
   () => void nextTick(reregisterAll),
 );
 
@@ -319,7 +406,9 @@ onMounted(() => {
         return;
       }
 
-      const target = location.current.dropTargets.find((candidate) => isDragData(candidate.data));
+      const target = location.current.dropTargets.find((candidate) =>
+        isDragData(candidate.data),
+      );
       if (target && isDragData(target.data)) {
         const targetSerializedKey = serializeKey(target.data.key);
         const position = dropPositions.get(targetSerializedKey);
@@ -353,12 +442,20 @@ onBeforeUnmount(() => {
   >
     <slot name="before" />
 
-    <template v-if="items.length > 0">
+    <TransitionGroup
+      v-if="items.length > 0"
+      :css="animated"
+      :move-class="
+        animated ? 'vue-ui-sortable-list__move' : 'vue-ui-sortable-list__static'
+      "
+    >
       <component
         :is="itemTag"
         v-for="(item, index) in items"
         :key="serializeKey(resolveKey(item, index))"
-        :ref="(element: unknown) => setItemElement(resolveKey(item, index), element)"
+        :ref="
+          (element: unknown) => setItemElement(resolveKey(item, index), element)
+        "
         :class="[
           'vue-ui-sortable-list__item',
           ui.item,
@@ -372,15 +469,22 @@ onBeforeUnmount(() => {
           ],
         ]"
         :data-sortable-key="serializeKey(resolveKey(item, index))"
-        :data-dragging="draggingKey === serializeKey(resolveKey(item, index)) || undefined"
-        :data-drop-position="dropPositions.get(serializeKey(resolveKey(item, index))) || undefined"
+        :data-dragging="
+          draggingKey === serializeKey(resolveKey(item, index)) || undefined
+        "
+        :data-drop-position="
+          dropPositions.get(serializeKey(resolveKey(item, index))) || undefined
+        "
         :tabindex="!useHandle && itemCanDrag(item, index) ? 0 : undefined"
         :aria-label="!useHandle ? handleAriaLabel(item, index) : undefined"
         @keydown="!useHandle && moveByKeyboard(item, index, $event)"
       >
         <button
           v-if="useHandle"
-          :ref="(element: unknown) => setHandleElement(resolveKey(item, index), element)"
+          :ref="
+            (element: unknown) =>
+              setHandleElement(resolveKey(item, index), element)
+          "
           type="button"
           :class="['vue-ui-sortable-list__handle', ui.handle]"
           :disabled="!itemCanDrag(item, index)"
@@ -393,7 +497,9 @@ onBeforeUnmount(() => {
             :index="index"
             :key="resolveKey(item, index)"
             :dragging="draggingKey === serializeKey(resolveKey(item, index))"
-            :drop-position="dropPositions.get(serializeKey(resolveKey(item, index))) ?? null"
+            :drop-position="
+              dropPositions.get(serializeKey(resolveKey(item, index))) ?? null
+            "
             :draggable="itemCanDrag(item, index)"
             :aria-label="handleAriaLabel(item, index)"
           >
@@ -408,12 +514,14 @@ onBeforeUnmount(() => {
             :index="index"
             :key="resolveKey(item, index)"
             :dragging="draggingKey === serializeKey(resolveKey(item, index))"
-            :drop-position="dropPositions.get(serializeKey(resolveKey(item, index))) ?? null"
+            :drop-position="
+              dropPositions.get(serializeKey(resolveKey(item, index))) ?? null
+            "
             :draggable="itemCanDrag(item, index)"
           />
         </div>
       </component>
-    </template>
+    </TransitionGroup>
 
     <div v-else :class="['vue-ui-sortable-list__empty', ui.empty]">
       <slot name="empty" />
@@ -422,4 +530,3 @@ onBeforeUnmount(() => {
     <slot name="after" />
   </component>
 </template>
-

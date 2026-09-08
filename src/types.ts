@@ -11,6 +11,8 @@ export interface SortableListProps<TItem> {
   itemKey: SortableItemKey<TItem>;
   orientation?: SortableOrientation;
   disabled?: boolean;
+  /** Animate item position changes. Reduced-motion preferences are respected. */
+  animated?: boolean;
   useHandle?: boolean;
   tag?: string;
   itemTag?: string;
